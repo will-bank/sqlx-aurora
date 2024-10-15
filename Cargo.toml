@@ -15,4 +15,11 @@ categories = ["web-programming", "database"]
 exclude = [".pre-commit-config.yaml", ".github"]
 
 [dependencies]
-sqlx = { version = "0.8.2", features = ["postgres"] }
+sqlx = { version = "0.8.2", features = ["postgres", "runtime-tokio-native-tls", "macros"] }
+
+[dev-dependencies]
+dotenv = "0.15.0"
+test-context = "0.3.0"
+testcontainers = { version = "0.23.1", features = ["blocking"] }
+testcontainers-modules = { version = "0.11.2", features = ["postgres"] }
+tokio = { version = "1.40.0", features = ["full"] }

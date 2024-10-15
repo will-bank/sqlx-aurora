@@ -1,0 +1,32 @@
+version: "3.9"
+
+services:
+  postgres-writer:
+    image: postgres:15
+    environment:
+      POSTGRES_PASSWORD: "password"
+      POSTGRES_USER: "writer_user"
+      POSTGRES_DB: "writer"
+    ports:
+      - "5444:5432"
+    command: ["postgres", "-c", "wal_level=logical"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
+
+  postgres-reader:
+    image: postgres:15
+    environment:
+      POSTGRES_PASSWORD: "password"
+      POSTGRES_USER: "reader_user"
+      POSTGRES_DB: "reader"
+    ports:
+      - "5431:5432"
+    command: [ "postgres", "-c", "default_transaction_read_only=on" ]
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 2s
+      timeout: 5s
+      retries: 10
