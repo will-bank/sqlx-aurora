@@ -1,0 +1,18 @@
+[package]
+name = "sqlx-aurora"
+version = "0.1.0"
+edition = "2021"
+authors = [
+    "Alefh Sousa <alefh.sousa@gmail.com>"
+]
+license = "MIT"
+description = "utilities for sqlx and aws aurora"
+readme = "README.md"
+homepage = "https://github.com/will-bank/sqlx-aurora"
+repository = "https://github.com/will-bank/sqlx-aurora"
+keywords = ["postgres", "sqlx", "hpa-proxy", "database"]
+categories = ["web-programming", "database"]
+exclude = [".pre-commit-config.yaml", ".github"]
+
+[dependencies]
+sqlx = { version = "0.8.2", features = ["postgres"] }
