@@ -1,21 +1,18 @@
 use std::ops::{Deref, DerefMut};
 
-use sqlx::{Connection, PgConnection, Pool, Postgres};
-use sqlx::postgres::PgPoolOptions;
 use crate::config::DbConfig;
+
+use sqlx::postgres::PgPoolOptions;
+use sqlx::{Connection, PgConnection, Pool, Postgres};
 
 pub struct Reader(Pool<Postgres>);
 
 impl Reader {
-
     pub async fn new(db_config: DbConfig) -> Result<Self, sqlx::Error> {
-
         let conn_string = db_config.connection_url();
         let mut conn = PgConnection::connect(&conn_string).await?;
         let sql = "show transaction_read_only";
-        let transaction_read_only: String = sqlx::query_scalar(sql)
-            .fetch_one(&mut conn)
-            .await?;
+        let transaction_read_only: String = sqlx::query_scalar(sql).fetch_one(&mut conn).await?;
         if transaction_read_only != "on" {
             return Err(sqlx::Error::Configuration(
                 "The host is not a reader instance; please check your configurations".into(),
@@ -51,9 +48,10 @@ impl DerefMut for Reader {
 
 #[cfg(test)]
 mod reader_tests {
-    use std::error::Error;
-    use crate::config::DbConfig;
+
+    use crate::config::{DbConfig, DbConfigBuilder};
     use crate::reader::Reader;
+    use std::error::Error;
 
     #[tokio::test]
     async fn should_return_error_because_instance_is_not_a_reader() -> Result<(), Box<dyn Error>> {
@@ -61,7 +59,7 @@ mod reader_tests {
         let db_config = DbConfig::from_env();
         let reader = Reader::new(db_config.clone()).await;
 
-        let err = reader.map_err(|e|e.to_string()).err().unwrap();
+        let err = reader.map_err(|e| e.to_string()).err().unwrap();
         assert_eq!(err, "error with configuration: The host is not a reader instance; please check your configurations");
         Ok(())
     }
@@ -71,24 +69,28 @@ mod reader_tests {
         dotenv::from_filename(".reader.env").ok();
         let db_config = DbConfig::from_env();
         let reader = Reader::new(db_config.clone()).await?;
-        let row: (i32,) = sqlx::query_as("SELECT 1")
-            .fetch_one(reader.pool())
-            .await?;
+        let row: (i32,) = sqlx::query_as("SELECT 1").fetch_one(reader.pool()).await?;
         assert_eq!(row.0, 1);
         Ok(())
     }
 
     #[tokio::test]
-    async fn should_return_data_when_instance_is_a_reader_from_direct_config() -> Result<(), Box<dyn Error>> {
-        let db_config = DbConfig::new("localhost".to_string(),
-                                      "reader".to_string(),
-                                      "reader_user".to_string(),
-                                      "password".to_string(),
-                                      "another-app-to-run".to_string(), Some(5431), None, None, None);
+    async fn should_return_data_when_instance_is_a_reader_from_direct_config(
+    ) -> Result<(), Box<dyn Error>> {
+        let db_config = DbConfigBuilder::new()
+            .host("localhost")
+            .user("reader_user")
+            .name("reader")
+            .pass("password")
+            .app_name("some-app-to-run")
+            .port(5431)
+            .min_pool_size(1)
+            .max_pool_size(3)
+            .idle_in_transaction_session(3000)
+            .build()
+            .expect("problem to create db config");
         let reader = Reader::new(db_config.clone()).await?;
-        let row: (i32,) = sqlx::query_as("SELECT 1")
-            .fetch_one(reader.pool())
-            .await?;
+        let row: (i32,) = sqlx::query_as("SELECT 1").fetch_one(reader.pool()).await?;
         assert_eq!(row.0, 1);
         Ok(())
     }
@@ -110,7 +112,7 @@ mod reader_tests {
             }
             Err(_) => false,
         };
-        assert_eq!(is_read_only, true);
+        assert!(is_read_only);
         Ok(())
     }
 }

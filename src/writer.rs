@@ -1,7 +1,7 @@
 use std::ops::{Deref, DerefMut};
 
-use sqlx::{Pool, Postgres};
 use sqlx::postgres::PgPoolOptions;
+use sqlx::{Pool, Postgres};
 
 use crate::config::DbConfig;
 
@@ -39,6 +39,7 @@ impl DerefMut for Writer {
 
 #[cfg(test)]
 mod writer_tests {
+
     use std::error::Error;
 
     use crate::config::DbConfig;
@@ -49,9 +50,7 @@ mod writer_tests {
         dotenv::from_filename(".writer.env").ok();
         let db_config = DbConfig::from_env();
         let writer = Writer::new(db_config.clone()).await?;
-        let row: (i32,) = sqlx::query_as("SELECT 1")
-            .fetch_one(writer.pool())
-            .await?;
+        let row: (i32,) = sqlx::query_as("SELECT 1").fetch_one(&*writer).await?;
         assert_eq!(row.0, 1);
         Ok(())
     }
